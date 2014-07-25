@@ -1,5 +1,7 @@
 jasmine.getEnv().defaultTimeoutInterval = 10000; //ms
 
+//var Q = require(Q);
+
 describe("A suite to explore JavaScript promises using Q", function () {
 	//Function declarations
 	function plainSquare(num) {
