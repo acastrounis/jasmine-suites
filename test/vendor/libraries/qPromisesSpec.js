@@ -1,6 +1,6 @@
-jasmine.getEnv().defaultTimeoutInterval = 10000; //ms
+//jasmine.getEnv().defaultTimeoutInterval = 10000; //ms
 
-//var Q = require(Q);
+var Q = require('q');
 
 describe("A suite to explore JavaScript promises using Q", function () {
 	//Function declarations
