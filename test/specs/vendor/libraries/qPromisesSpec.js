@@ -1,8 +1,15 @@
 //jasmine.getEnv().defaultTimeoutInterval = 10000; //ms
 
-var Q = require('q');
+var appRoot = process.cwd(),
+    Q = require('q'),
+    fs = require('fs'),
+    util = require('util'),
+    xmlParser = require('xml2js').parseString,
+    _ = require('lodash');
 
-describe("A suite to explore JavaScript promises using Q", function () {
+Q.longStackSupport = true;
+
+describe("A suite to explore basic usage of JavaScript promises using Q", function () {
 	//Function declarations
 	function plainSquare(num) {
 		return num * num;
@@ -110,10 +117,8 @@ describe("A suite to explore JavaScript promises using Q", function () {
 
 	});
 
-	//DOMAIN-SPECIFIC EXAMPLE
-
-	//ADVANCED PROMISE USAGE
-	describe("A suite for advanced promise usage", function() {
+	//PROMISE FEATURES
+	describe("A suite to explore promise features", function() {
 
 		it("demonstrates function call returning a promise and success (onFulfilled)", function(done) {
 			square(10).then(function(total) {
@@ -232,5 +237,129 @@ describe("A suite to explore JavaScript promises using Q", function () {
 			});
 		});
 	});
+});
+
+describe("A suite to explore advanced usage of JavaScript promises using Q", function () {
+    var deferred, inspect, value, error, dataObject;
+
+    beforeEach(function () {
+        inspect = false;
+        deferred = Q.defer();
+        dataObject = {
+            propName: "propVal",
+            func: function (val) {
+                return val
+            }
+        }
+    });
+
+    afterEach(function () {
+        deferred = null;
+        value = null;
+        error = null;
+    });
+
+    it('should demonstrate the use of deferred promises', function () {
+        var deferred = Q.defer();
+        fs.readFile(appRoot + "/test/helpers/files/testFile.txt", { encoding: 'utf8', flag: 'r'}, function (error, text) {
+            if (error) {
+                deferred.reject(new Error(error));
+            } else {
+                deferred.resolve(text);
+            }
+        });
+        expect(deferred.promise).toBeDefined();
+        expect(deferred.promise.then(null, function (val) {
+            return val
+        })).toBeDefined();
+    });
+
+    describe('a suite for nodeback alternatives', function () {
+        it('should successfully demonstrate nodeback alternatives', function (done) {
+            var readFile = Q.denodeify(fs.readFile);
+            readFile(appRoot + "/test/helpers/files/testLog.txt", { encoding: 'utf8', flag: 'r'})
+                .then(function (text) {
+                    expect(text).toBeDefined();
+                }, null).done();
+
+            var readFile = Q.denodeify(fs.readFile);
+            readFile(appRoot + "/test/helpers/files/testLogX.txt", { encoding: 'utf8', flag: 'r'})
+                .then(null,function (err) {
+                    expect(err.name).toEqual("Error");
+                    expect(err.message).toEqual("ENOENT, open '/Users/Dev/SourceCode/fantasy/logs/testLogs/testLogXXX.txt'");
+                }).done();
+
+            var deferred = Q.defer();
+            fs.readFile(appRoot + "/test/helpers/files/testLog.txt", { encoding: 'utf8', flag: 'r'}, deferred.makeNodeResolver())
+            deferred.promise.then(function (text) {
+                expect(text).toBeDefined();
+            }, null).done();
+
+            var deferred = Q.defer();
+            fs.readFile(appRoot + "/test/helpers/files/testLogX.txt", { encoding: 'utf8', flag: 'r'}, deferred.makeNodeResolver())
+            deferred.promise.then(null,function (err) {
+                expect(err.name).toEqual("Error");
+                expect(err.message).toEqual("ENOENT, open '/Users/Dev/SourceCode/fantasy/logs/testLogs/testLogXXX.txt'");
+            }).done();
+
+            Q.nfapply(fs.readFile, [appRoot + "/test/helpers/files/testLog.txt", { encoding: 'utf8', flag: 'r'}])
+                .then(function (text) {
+                    expect(text).toBeDefined();
+                }, null).done();
+
+            Q.nfcall(fs.readFile, appRoot + "/test/helpers/files/testLog.txt", { encoding: 'utf8', flag: 'r'})
+                .then(function (text) {
+                    expect(text).toBeDefined();
+                }, null).done();
+
+            done();
+        });
+    });
+
+    describe('a suite for checking for promises', function () {
+        it('should check for Q/promise types and inspect all', function (done) {
+            expect(typeof Q).toEqual('function');
+            expect(typeof Q()).toEqual('object');
+            if (inspect) {
+                logger.info(util.inspect(Q, { showHidden: true, depth: null }));
+                logger.info(util.inspect(Q(), { showHidden: true, depth: null }));
+                logger.inspect(Q, true, null);
+                logger.inspect(Q(), true, null);
+            }
+            done();
+        });
+
+        it('should demonstrate Q.isPromise', function (done) {
+            //NOTE: This checks if Q promise specifically
+            expect(Q.isPromise(true)).toBeFalsy();
+            expect(Q.isPromise(Q(999))).toBeTruthy();
+            done();
+        });
+
+        it('should demonstrate Q.isPromiseAlike', function (done) {
+            //NOTE: This checks if a promise (i.e., that has a then function)
+            expect(Q.isPromiseAlike(true)).toBeFalsy();
+            expect(Q.isPromiseAlike(Q(999))).toBeTruthy();
+            done();
+        });
+
+        it('should demonstrate Q.promised', function (done) {
+            var func = function(val){
+                return val;
+            };
+            var promisedFunc = Q.promised(func);
+            promisedFunc(999).then(function(val){
+                expect(val).toEqual(999);
+                done();
+            });
+
+            promisedFunc(Q(999)).then(function(val){
+                expect(val).toEqual(999);
+                done();
+            });
+        });
+
+    });
+
 });
 
