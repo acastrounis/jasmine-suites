@@ -361,5 +361,143 @@ describe("A suite to explore advanced usage of JavaScript promises using Q", fun
 
     });
 
+    describe('a suite for promise-for-object methods', function () {
+        var promiseObj, deferred;
+
+        beforeEach(function () {
+            promiseObj = Q.fcall(function () {
+                return dataObject;
+            });
+            deferred = Q.defer();
+            deferred.resolve(dataObject);
+        });
+
+        afterEach(function () {
+            promiseObj = null;
+            deferred = null;
+        });
+
+        it('should demonstrate promise.get', function (done) {
+            deferred.promise.then(function (val) {
+                expect(val.propName).toEqual('propVal');
+                done();
+            }, null).done();
+
+            deferred.promise.get('propName').then(function (val) {
+                expect(val).toEqual('propVal');
+                done();
+            }, null).done();
+        });
+
+        it('should demonstrate promise.post', function (done) {
+            deferred.promise.post('func', [999]).then(function (val) {
+                expect(val).toEqual(999);
+                done();
+            }, null).done();
+        });
+
+        it('should demonstrate promise.invoke', function (done) {
+            deferred.promise.invoke('func', 999).then(function (val) {
+                expect(val).toEqual(999);
+                done();
+            }, null).done();
+        });
+
+        it('should demonstrate promise.keys', function (done) {
+            deferred.promise.keys().then(function (keys) {
+                expect(keys).toEqual([ 'propName', 'func' ]);
+                expect(keys).toEqual(_.keys(dataObject));
+                done();
+            }, null).done();
+        });
+    });
+
+    describe('a suite for promise-for-function methods', function () {
+        var promiseObj, promiseFunc, deferred, funcObj;
+
+        function funcObject() {
+            this.func = function (val) {
+                return val;
+            };
+        };
+        var func = function (val) {
+            return val;
+        };
+
+        beforeEach(function () {
+            deferred = Q.defer();
+            deferred.resolve(func);
+            funcObj = new funcObject();
+        });
+
+        afterEach(function () {
+            deferred = null;
+        });
+
+        it('should demonstrate promise.fapply', function (done) {
+            deferred.promise.fapply([999]).then(function (val) {
+                expect(val).toEqual(999);
+                done();
+            }, null).done();
+        });
+
+        it('should demonstrate promise.fcall', function (done) {
+            deferred.promise.fcall(999).then(function (val) {
+                expect(val).toEqual(999);
+                done();
+            }, null).done();
+        });
+
+    });
+
+    describe('a suite for promise-for-array methods', function () {
+        var promiseObj, promiseFunc, deferred, funcObj;
+
+        function funcObject() {
+            this.func = function (val) {
+                return val;
+            };
+        };
+        var func = function (val) {
+            return val;
+        };
+
+        beforeEach(function () {
+            deferred = Q.defer();
+            deferred.resolve(func);
+            funcObj = new funcObject();
+        });
+
+        afterEach(function () {
+            deferred = null;
+        });
+
+        it('should demonstrate promise.all', function (done) {
+            Q.all([Q(), Q(999)]).done(function (result) {
+                expect(result).toEqual([ undefined, 999 ]);
+                done();
+            });
+        });
+
+        it('should demonstrate promise.all', function (done) {
+            Q.allSettled([Q(), Q(999)]).spread(function (first, second) {
+                expect(first.value).toBeUndefined();
+                expect(second.value).toEqual(999);
+                expect(first.state).toEqual("fulfilled");
+                expect(second.state).toEqual("fulfilled");
+                done();
+            });
+        });
+
+        it('should demonstrate promise.all', function (done) {
+            Q.all([Q(999), Q(999)]).spread(function (first, second) {
+                expect(first).toEqual(999);
+                expect(second).toEqual(999);
+                expect(first).toEqual(second);
+                done();
+            });
+        });
+
+    });
 });
 
